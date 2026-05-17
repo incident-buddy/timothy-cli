@@ -19,6 +19,7 @@ vi.mock("../lib/storage.js", () => ({
 
 import { db } from "../lib/firebase.js";
 import { uploadHtml, generateSignedUrl } from "../lib/storage.js";
+import { now } from "../lib/time.js";
 
 const mockUserId = "user-123";
 
@@ -174,7 +175,7 @@ describe("POST /upload", () => {
     vi.mocked(db.collection).mockReturnValue(collectionMock as unknown as ReturnType<typeof db.collection>);
 
     const wrapper = makeWrapperApp();
-    const before = new Date();
+    const before = now();
     const res = await wrapper.fetch(makeRequest(validBody));
 
     expect(res.status).toBe(200);

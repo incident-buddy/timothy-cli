@@ -13,6 +13,7 @@ vi.mock("../lib/storage.js", async (importOriginal) => {
 import app from "../index.js";
 import { db } from "../lib/firebase.js";
 import { getBucket } from "../lib/storage.js";
+import { epochMills } from "../lib/time.js";
 
 // Requires: firebase emulators:start --only firestore,storage
 const TEST_API_KEY = "integration-test-key";
@@ -106,7 +107,7 @@ describe("POST /upload (integration)", () => {
   });
 
   it("uploads HTML, saves to Firestore, and returns id/url/expiresAt", async () => {
-    const before = Date.now();
+    const before = epochMills();
     const res = await app.fetch(makeRequest(validBody));
 
     expect(res.status).toBe(200);
@@ -150,7 +151,7 @@ describe("POST /upload (integration)", () => {
 
   it("expiresAt is ttlDays from now", async () => {
     const ttlDays = 3;
-    const before = Date.now();
+    const before = epochMills();
     const res = await app.fetch(
       makeRequest({ ...validBody, ttlDays })
     );

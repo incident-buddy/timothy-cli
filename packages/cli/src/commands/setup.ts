@@ -1,6 +1,7 @@
 import { createInterface } from "readline";
 import { Command } from "commander";
 import { writeConfig } from "../lib/config.js";
+import { bold, color, green } from "../lib/color.js";
 
 function prompt(question: string): Promise<string> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -21,5 +22,5 @@ export const setupCommand = new Command("setup")
       apiKey,
       apiEndpoint: apiEndpoint || "https://api.timothy.example.com",
     });
-    process.stdout.write("✓ Saved credentials\n");
+    process.stdout.write(`${color("✓", green, bold)} Saved credentials`);
   });

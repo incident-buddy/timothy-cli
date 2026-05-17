@@ -3,6 +3,7 @@ import { Command } from "commander";
 import { apiUpload } from "../lib/api.js";
 import { readConfig } from "../lib/config.js";
 import { extractDescription, extractTitle } from "../lib/html.js";
+import { bold, color, green } from "../lib/color.js";
 
 export const uploadCommand = new Command("upload")
   .description("Upload an HTML file and get a signed URL")
@@ -36,5 +37,5 @@ export const uploadCommand = new Command("upload")
     }
 
     const result = await apiUpload({ html, title, description, ttlDays }, config as Required<typeof config>);
-    process.stdout.write(`✓ Uploaded: ${result.url}\n`);
+    process.stdout.write(`${color("✓", green, bold)} Uploaded: ${result.url}\n`);
   });

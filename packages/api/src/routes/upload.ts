@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { db } from "../lib/firebase.js";
 import { uploadHtml, generateSignedUrl } from "../lib/storage.js";
+import { ulid } from "ulid";
+import { addSeconds, now } from "../lib/time.js";
 
 const STORAGE_BASE_PATH = "timothy-files";
 const HTML_FILES_COLLECTION = "htmlFiles";
@@ -62,9 +64,9 @@ app.post("/", async (c) => {
   }
   const { html, title, description, ttlDays } = parsed.data;
 
-  const id = crypto.randomUUID();
+  const id = ulid();
   const storagePath = `${STORAGE_BASE_PATH}/${userId}/${id}.html`;
-  const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
+  const expiresAt = addSeconds(now(), ttlDays * 24 * 60 * 60);
 
   await uploadHtml(storagePath, html);
   const url = await generateSignedUrl(storagePath, expiresAt);
@@ -75,7 +77,7 @@ app.post("/", async (c) => {
     description,
     storagePath,
     expiresAt,
-    createdAt: new Date(),
+    createdAt: now(),
   });
 
   return c.json({ id, url, expiresAt: expiresAt.toISOString() });
