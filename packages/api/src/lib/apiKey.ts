@@ -7,7 +7,7 @@ export async function authMiddleware(c: Context, next: Next) {
   if (!authorization?.startsWith("Bearer ")) {
 		logger.error("Bearer token missing or malformed");
     return c.json({ error: "Unauthorized" }, 401);
-  }	
+  }
 
   const apiKey = authorization.slice(7);
   const snapshot = await db
