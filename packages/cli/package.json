@@ -15,7 +15,8 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "commander": "^13.1.0"
+    "commander": "^13.1.0",
+    "timothy-cli": "link:"
   },
   "devDependencies": {
     "@types/node": "^25.8.0",

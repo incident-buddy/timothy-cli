@@ -8,7 +8,7 @@ export default defineConfig({
       FIREBASE_STORAGE_EMULATOR_HOST: "localhost:9199",
       STORAGE_EMULATOR_HOST: "http://localhost:9199",
       FIREBASE_PROJECT_ID: "demo-test",
-      FIREBASE_STORAGE_BUCKET: "demo-test.appspot.com",
+      FIREBASE_STORAGE_BUCKET: "demo-test.example.com",
     },
   },
 });

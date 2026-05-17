@@ -6,7 +6,7 @@ if (getApps().length === 0) {
   if (process.env.FIRESTORE_EMULATOR_HOST) {
     initializeApp({
       projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-test",
-      storageBucket: process.env.FIREBASE_STORAGE_BUCKET ?? "demo-test.appspot.com",
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET ?? "demo-test.example.com",
     });
   } else {
     initializeApp({
