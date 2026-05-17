@@ -1,0 +1,10 @@
+{
+  "name": "timothy",
+  "version": "0.0.0",
+  "private": true,
+"scripts": {
+    "build": "npm run build --workspaces",
+    "dev:api": "npm run dev --workspace=packages/api",
+    "dev:cli": "npm run dev --workspace=packages/cli"
+  }
+}

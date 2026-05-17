@@ -1,0 +1,16 @@
+{
+  "name": "timothy-cli",
+  "version": "0.0.1",
+  "description": "CLI tool to upload LLM-generated HTML and share via signed URLs",
+  "bin": {
+    "tim": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "prepublishOnly": "pnpm run build"
+  }
+}
