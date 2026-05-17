@@ -1,0 +1,31 @@
+import { Command } from "commander";
+import { apiList } from "../lib/api.js";
+import { readConfig } from "../lib/config.js";
+
+export const listCommand = new Command("list")
+  .description("List uploaded files")
+  .action(async () => {
+    const config = await readConfig();
+    if (!config.apiKey || !config.apiEndpoint) {
+      process.stderr.write("Error: run `tim setup` first\n");
+      process.exit(1);
+    }
+
+    const files = await apiList(config as Required<typeof config>);
+    if (files.length === 0) {
+      process.stdout.write("No files uploaded yet.\n");
+      return;
+    }
+
+    const idW = 12;
+    const titleW = 24;
+    const dateW = 12;
+    const header = `${"ID".padEnd(idW)}${"TITLE".padEnd(titleW)}${"CREATED".padEnd(dateW)}EXPIRES`;
+    process.stdout.write(`${header}\n`);
+    for (const f of files) {
+      const created = f.createdAt.slice(0, 10);
+      const expires = f.expiresAt.slice(0, 10);
+      const row = `${f.id.padEnd(idW)}${f.title.padEnd(titleW)}${created.padEnd(dateW)}${expires}`;
+      process.stdout.write(`${row}\n`);
+    }
+  });
