@@ -1,0 +1,9 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // パブリックアクセス禁止 - 署名付きURLのみで配信
+      allow read, write: if false;
+    }
+  }
+}

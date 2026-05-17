@@ -1,3 +1,4 @@
 [tools]
+gcloud = "latest"
 node = "24"
 "npm:pnpm" = "latest"
