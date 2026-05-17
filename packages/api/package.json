@@ -11,7 +11,8 @@
     "@google-cloud/storage": "^7.19.0",
     "@hono/node-server": "^2.0.2",
     "firebase-admin": "^13.10.0",
-    "hono": "^4.12.18"
+    "hono": "^4.12.18",
+    "pino": "^10.3.1"
   },
   "devDependencies": {
     "@types/node": "^25.8.0",

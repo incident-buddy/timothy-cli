@@ -2,7 +2,7 @@ import { Hono } from "hono";
 
 const app = new Hono<{ Variables: { userId: string } }>();
 
-app.delete("/:id", async (c) => {
+app.delete("/:id", (c) => {
   // TODO: implement in #6
   return c.json({ message: "not implemented" }, 501);
 });
