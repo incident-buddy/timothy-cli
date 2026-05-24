@@ -1,10 +1,31 @@
 import { Hono } from "hono";
+import { db } from "../lib/firebase.js";
+import { deleteFile } from "../lib/storage.js";
+
+const HTML_FILES_COLLECTION = "htmlFiles";
 
 const app = new Hono<{ Variables: { userId: string } }>();
 
-app.delete("/:id", (c) => {
-  // TODO: implement in #6
-  return c.json({ message: "not implemented" }, 501);
+app.delete("/:id", async (c) => {
+  const userId = c.get("userId");
+  const id = c.req.param("id");
+
+  const docRef = db.collection(HTML_FILES_COLLECTION).doc(id);
+  const doc = await docRef.get();
+
+  if (!doc.exists) {
+    return c.json({ error: "Not Found" }, 404);
+  }
+
+  const data = doc.data()!;
+  if (data.userId !== userId) {
+    return c.json({ error: "Not Found" }, 404);
+  }
+
+  await deleteFile(data.storagePath);
+  await docRef.delete();
+
+  return c.json({ id });
 });
 
 export default app;
