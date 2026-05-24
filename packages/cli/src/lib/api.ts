@@ -49,7 +49,8 @@ export async function apiList(config: Config): Promise<FileEntry[]> {
     headers: authHeaders(config.apiKey),
   });
   await assertOk(res);
-  return res.json() as Promise<FileEntry[]>;
+  const { files } = await res.json() as { files: FileEntry[] };
+  return files;
 }
 
 export async function apiDelete(id: string, config: Config): Promise<void> {
