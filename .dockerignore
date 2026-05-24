@@ -5,3 +5,4 @@
 **/*.integration.test.ts
 .git
 packages/cli
+serviceAccount.json
