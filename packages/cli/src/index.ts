@@ -8,7 +8,7 @@ import { uploadCommand } from "./commands/upload.js";
 const program = new Command();
 program
   .name("tim")
-  .description("Upload LLM-generated HTML and share via signed URLs")
+  .description("Upload LLM-generated HTML and share via time-limited URLs")
   .version("0.0.1");
 
 program.addCommand(setupCommand);

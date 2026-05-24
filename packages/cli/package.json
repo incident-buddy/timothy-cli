@@ -1,22 +1,30 @@
 {
   "name": "timothy-cli",
-  "version": "0.0.1",
-  "description": "CLI tool to upload LLM-generated HTML and share via signed URLs",
+  "version": "0.1.0",
+  "description": "CLI tool to upload LLM-generated HTML and share via time-limited URLs",
   "type": "module",
+  "main": "./dist/index.js",
   "bin": {
     "tim": "./dist/index.js"
   },
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "EPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/incident-buddy/timothy-cli.git"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "commander": "^13.1.0",
-    "timothy-cli": "link:"
+    "commander": "^13.1.0"
   },
   "devDependencies": {
     "@types/node": "^25.8.0",

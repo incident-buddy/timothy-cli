@@ -14,9 +14,6 @@ importers:
       commander:
         specifier: ^13.1.0
         version: 13.1.0
-      timothy-cli:
-        specifier: 'link:'
-        version: 'link:'
     devDependencies:
       '@types/node':
         specifier: ^25.8.0
