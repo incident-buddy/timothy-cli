@@ -121,17 +121,40 @@ Firestoreデータベースを作成します:
 gcloud firestore databases create --location=${REGION}
 ```
 
-リポジトリルートからFirestoreルール・インデックス・Storageルールをデプロイします:
+リポジトリルートからFirestoreルールとインデックスをデプロイします:
 
 ```bash
 firebase use ${PROJECT}
-firebase deploy --only firestore,storage
+firebase deploy --only firestore
 ```
 
 これにより以下が適用されます:
 - `firestore.rules` — クライアントからの直接アクセスを禁止
 - `firestore.indexes.json` — `tim list` で使用する `htmlFiles` の複合インデックス（userId + createdAt）
-- `storage.rules` — Cloud Storageへの直接パブリックアクセスを禁止
+
+**Cloud Storageバケットの作成:**
+
+注: `.appspot.com` 形式のバケット名はドメイン所有権確認が必要なため、別の名前を使用します:
+
+```bash
+BUCKET=${PROJECT}-timothy
+gsutil mb -l ${REGION} gs://${BUCKET}
+gsutil uniformbucketlevelaccess set on gs://${BUCKET}
+
+# Firebase StorageにバケットをリンクするFirebaserm
+curl -s -X POST \
+  "https://firebasestorage.googleapis.com/v1beta/projects/${PROJECT}/buckets/${BUCKET}:addFirebase" \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "Content-Type: application/json"
+```
+
+バケットはデフォルトでプライベート（パブリックアクセスなし）です。APIはAdmin SDKでアクセスするためFirebase Security Rulesをバイパスします。`storage.rules` のデプロイは任意ですが、[Firebaseコンソール](https://console.firebase.google.com) でFirebase Storageを初期化した後に以下で適用できます:
+
+```bash
+firebase deploy --only storage
+```
+
+次のステップで `FIREBASE_STORAGE_BUCKET` に指定するバケット名は、ここで作成した名前（`${PROJECT}-timothy` など）を使用してください。
 
 ### 3. サービスアカウントの作成
 
@@ -166,7 +189,7 @@ gcloud artifacts repositories create timothy \
 ```bash
 echo -n "${PROJECT}" | gcloud secrets create FIREBASE_PROJECT_ID --data-file=-
 echo -n "timothy-api@${PROJECT}.iam.gserviceaccount.com" | gcloud secrets create FIREBASE_CLIENT_EMAIL --data-file=-
-echo -n "${PROJECT}.appspot.com" | gcloud secrets create FIREBASE_STORAGE_BUCKET --data-file=-
+echo -n "${PROJECT}-timothy" | gcloud secrets create FIREBASE_STORAGE_BUCKET --data-file=-
 printf '%s' "$(cat serviceAccount.json | jq -r .private_key)" \
   | gcloud secrets create FIREBASE_PRIVATE_KEY --data-file=-
 ```

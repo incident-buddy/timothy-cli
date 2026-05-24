@@ -121,17 +121,40 @@ Create the Firestore database:
 gcloud firestore databases create --location=${REGION}
 ```
 
-Deploy Firestore rules, indexes, and Storage rules from the repository root:
+Deploy Firestore rules and indexes from the repository root:
 
 ```bash
 firebase use ${PROJECT}
-firebase deploy --only firestore,storage
+firebase deploy --only firestore
 ```
 
 This applies:
 - `firestore.rules` — blocks all direct client access
 - `firestore.indexes.json` — composite index on `htmlFiles` (userId + createdAt) used by `tim list`
-- `storage.rules` — blocks all direct public access to Cloud Storage
+
+**Create the Cloud Storage bucket:**
+
+Note: The `.appspot.com` bucket name requires domain ownership verification. Use a custom bucket name instead:
+
+```bash
+BUCKET=${PROJECT}-timothy
+gsutil mb -l ${REGION} gs://${BUCKET}
+gsutil uniformbucketlevelaccess set on gs://${BUCKET}
+
+# Link the bucket to Firebase Storage
+curl -s -X POST \
+  "https://firebasestorage.googleapis.com/v1beta/projects/${PROJECT}/buckets/${BUCKET}:addFirebase" \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "Content-Type: application/json"
+```
+
+The bucket is private by default (no public access). The API accesses it via Admin SDK, which bypasses Firebase Security Rules, so deploying `storage.rules` is optional. If you do want to deploy them after setting up Firebase Storage via the [Firebase console](https://console.firebase.google.com), run:
+
+```bash
+firebase deploy --only storage
+```
+
+Use the bucket name (`${PROJECT}-timothy` or whatever you chose) as the value for `FIREBASE_STORAGE_BUCKET` in the next step.
 
 ### 3. Create a service account
 
@@ -166,7 +189,7 @@ gcloud artifacts repositories create timothy \
 ```bash
 echo -n "${PROJECT}" | gcloud secrets create FIREBASE_PROJECT_ID --data-file=-
 echo -n "timothy-api@${PROJECT}.iam.gserviceaccount.com" | gcloud secrets create FIREBASE_CLIENT_EMAIL --data-file=-
-echo -n "${PROJECT}.appspot.com" | gcloud secrets create FIREBASE_STORAGE_BUCKET --data-file=-
+echo -n "${PROJECT}-timothy" | gcloud secrets create FIREBASE_STORAGE_BUCKET --data-file=-
 printf '%s' "$(cat serviceAccount.json | jq -r .private_key)" \
   | gcloud secrets create FIREBASE_PRIVATE_KEY --data-file=-
 ```
