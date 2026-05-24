@@ -1,0 +1,14 @@
+FROM public.ecr.aws/lambda/nodejs:22 AS builder
+WORKDIR /build
+RUN npm install -g pnpm
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY packages/api/package.json ./packages/api/
+RUN pnpm install --filter @timothy/api --frozen-lockfile
+COPY packages/api/ ./packages/api/
+RUN pnpm --filter @timothy/api build
+RUN pnpm deploy --filter @timothy/api --prod --legacy /build/deploy && \
+    rm -rf /build/deploy/src /build/deploy/scripts
+
+FROM public.ecr.aws/lambda/nodejs:22
+COPY --from=builder /build/deploy ${LAMBDA_TASK_ROOT}
+CMD ["dist/lambda.handler"]

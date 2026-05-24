@@ -270,6 +270,157 @@ tim setup
 | Firestore | Write access via Admin SDK only; rules and indexes managed via Firebase CLI |
 | Auth | API key (Bearer token) for upload/list/delete; optional IP allowlist for share URLs |
 
+## Self-Hosting on AWS (Lambda)
+
+The API also runs on AWS Lambda using the same Firebase backend (Firestore + Cloud Storage). Only the compute layer changes — no code differences from the Cloud Run setup.
+
+### Prerequisites
+
+- AWS account with the AWS CLI installed and configured (`aws configure`)
+- Docker installed
+- Firebase project already set up (follow steps 1–3 of the [Cloud Run guide](#self-hosting) to create the Firestore database, deploy rules/indexes, and create a service account)
+
+### 1. Create an ECR repository
+
+```bash
+AWS_REGION=ap-northeast-1
+AWS_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+
+aws ecr create-repository --repository-name timothy-api --region ${AWS_REGION}
+```
+
+### 2. Build and push the Lambda image
+
+```bash
+IMAGE=${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/timothy-api:latest
+
+aws ecr get-login-password --region ${AWS_REGION} \
+  | docker login --username AWS --password-stdin ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
+
+docker build -f packages/api/Dockerfile.lambda -t ${IMAGE} .
+docker push ${IMAGE}
+```
+
+### 3. Register secrets in AWS Secrets Manager
+
+```bash
+aws secretsmanager create-secret --name FIREBASE_PROJECT_ID \
+  --secret-string "your-project-id"
+aws secretsmanager create-secret --name FIREBASE_CLIENT_EMAIL \
+  --secret-string "timothy-api@your-project.iam.gserviceaccount.com"
+aws secretsmanager create-secret --name FIREBASE_STORAGE_BUCKET \
+  --secret-string "your-project.appspot.com"
+aws secretsmanager create-secret --name FIREBASE_PRIVATE_KEY \
+  --secret-string "$(cat serviceAccount.json | jq -r .private_key)"
+```
+
+### 4. Create an IAM role for Lambda
+
+```bash
+aws iam create-role --role-name timothy-lambda \
+  --assume-role-policy-document '{
+    "Version": "2012-10-17",
+    "Statement": [{
+      "Effect": "Allow",
+      "Principal": { "Service": "lambda.amazonaws.com" },
+      "Action": "sts:AssumeRole"
+    }]
+  }'
+
+aws iam attach-role-policy --role-name timothy-lambda \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+aws iam put-role-policy --role-name timothy-lambda \
+  --policy-name SecretsManagerAccess \
+  --policy-document '{
+    "Version": "2012-10-17",
+    "Statement": [{
+      "Effect": "Allow",
+      "Action": "secretsmanager:GetSecretValue",
+      "Resource": "arn:aws:secretsmanager:'"${AWS_REGION}"':'"${AWS_ACCOUNT}"':secret:FIREBASE_*"
+    }]
+  }'
+```
+
+### 5. Create the Lambda function
+
+```bash
+ROLE_ARN=$(aws iam get-role --role-name timothy-lambda --query Role.Arn --output text)
+
+aws lambda create-function \
+  --function-name timothy-api \
+  --package-type Image \
+  --code ImageUri=${IMAGE} \
+  --role ${ROLE_ARN} \
+  --region ${AWS_REGION} \
+  --environment "Variables={
+    FIREBASE_PROJECT_ID=$(aws secretsmanager get-secret-value --secret-id FIREBASE_PROJECT_ID --query SecretString --output text),
+    FIREBASE_CLIENT_EMAIL=$(aws secretsmanager get-secret-value --secret-id FIREBASE_CLIENT_EMAIL --query SecretString --output text),
+    FIREBASE_STORAGE_BUCKET=$(aws secretsmanager get-secret-value --secret-id FIREBASE_STORAGE_BUCKET --query SecretString --output text),
+    FIREBASE_PRIVATE_KEY=$(aws secretsmanager get-secret-value --secret-id FIREBASE_PRIVATE_KEY --query SecretString --output text)
+  }"
+```
+
+### 6. Create a Lambda Function URL
+
+```bash
+aws lambda add-permission \
+  --function-name timothy-api \
+  --statement-id FunctionURLAllowPublicAccess \
+  --action lambda:InvokeFunctionUrl \
+  --principal "*" \
+  --function-url-auth-type NONE \
+  --region ${AWS_REGION}
+
+aws lambda create-function-url-config \
+  --function-name timothy-api \
+  --auth-type NONE \
+  --region ${AWS_REGION}
+```
+
+Note the `FunctionUrl` in the output — this is your API endpoint.
+
+### 7. Issue an API key
+
+Same as the Cloud Run setup — use the seed script with the Firebase service account credentials:
+
+```bash
+FIREBASE_PROJECT_ID=your-project-id \
+FIREBASE_CLIENT_EMAIL=$(cat serviceAccount.json | jq -r .client_email) \
+FIREBASE_PRIVATE_KEY=$(cat serviceAccount.json | jq -r .private_key) \
+API_KEY=hs_$(openssl rand -hex 16) \
+USER_ID=user@example.com \
+npx tsx packages/api/scripts/seed-api-key.ts
+```
+
+### 8. (Optional) Restrict access by IP
+
+Set the `ALLOWED_IPS` environment variable on the Lambda function:
+
+```bash
+aws lambda update-function-configuration \
+  --function-name timothy-api \
+  --environment "Variables={...,ALLOWED_IPS=203.0.113.0/24,198.51.100.42}" \
+  --region ${AWS_REGION}
+```
+
+### 9. Configure the CLI
+
+```bash
+tim setup
+# API key: hs_xxxxxxxxxxxxxxxxxxxx
+# API endpoint [https://api.timothy.example.com]: https://xxxxxxxxxxxx.lambda-url.ap-northeast-1.on.aws
+```
+
+### Infrastructure Overview
+
+| Component | Config |
+|---|---|
+| Lambda | Container image (`Dockerfile.lambda`), Function URL (no auth) |
+| Cloud Storage | Firebase Cloud Storage; proxied through Lambda |
+| Firestore | Firebase Firestore; shared with Cloud Run setup |
+| Auth | API key (Bearer token) for upload/list/delete; optional IP allowlist for share URLs |
+
 ## License
 
 EPL-2.0
