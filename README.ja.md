@@ -1,3 +1,5 @@
+<img width="1258" height="926" alt="image" src="https://github.com/user-attachments/assets/9c665922-1eaf-4642-80a2-ddade3b8b689" />
+
 # Timothy
 
 LLMが生成したHTMLをターミナルからアップロードし、有効期限付きURLで共有するセルフホスト型CLIツールです。URLを知っている人だけが閲覧でき、閲覧者のログインは不要です。
