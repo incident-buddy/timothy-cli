@@ -14,11 +14,10 @@ vi.mock("../lib/firebase.js", () => ({
 
 vi.mock("../lib/storage.js", () => ({
   uploadHtml: vi.fn().mockResolvedValue(undefined),
-  generateSignedUrl: vi.fn().mockResolvedValue("https://storage.googleapis.com/signed-url"),
 }));
 
 import { db } from "../lib/firebase.js";
-import { uploadHtml, generateSignedUrl } from "../lib/storage.js";
+import { uploadHtml } from "../lib/storage.js";
 import { now } from "../lib/time.js";
 
 const mockUserId = "user-123";
@@ -101,7 +100,6 @@ describe("POST /upload", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(uploadHtml).mockResolvedValue(undefined);
-    vi.mocked(generateSignedUrl).mockResolvedValue("https://storage.googleapis.com/signed-url");
     const docMock = { set: vi.fn().mockResolvedValue(undefined) };
     const collectionMock = { doc: vi.fn().mockReturnValue(docMock) };
     vi.mocked(db.collection).mockReturnValue(collectionMock as unknown as ReturnType<typeof db.collection>);
@@ -158,12 +156,11 @@ describe("POST /upload", () => {
     const json = await res.json() as { id: string; url: string; expiresAt: string };
 
     expect(json).toHaveProperty("id");
-    expect(json).toHaveProperty("url", "https://storage.googleapis.com/signed-url");
+    expect(json.url).toMatch(/^https?:\/\/[^/]+\/s\//);
     expect(json).toHaveProperty("expiresAt");
 
     const expectedPath = `timothy-files/${mockUserId}/${json.id}.html`;
     expect(uploadHtml).toHaveBeenCalledWith(expectedPath, validBody.html);
-    expect(generateSignedUrl).toHaveBeenCalledWith(expectedPath, expect.any(Date));
     expect(db.collection).toHaveBeenCalledWith("htmlFiles");
   });
 
@@ -195,15 +192,6 @@ describe("POST /upload", () => {
 
   it("returns 5xx when uploadHtml throws", async () => {
     vi.mocked(uploadHtml).mockRejectedValue(new Error("Storage error"));
-    const wrapper = makeWrapperApp();
-    const res = await wrapper.fetch(
-      makeRequest({ html: "<h1>Hi</h1>", title: "T", description: "D", ttlDays: 1 })
-    );
-    expect(res.status).toBeGreaterThanOrEqual(500);
-  });
-
-  it("returns 5xx when generateSignedUrl throws", async () => {
-    vi.mocked(generateSignedUrl).mockRejectedValue(new Error("URL generation error"));
     const wrapper = makeWrapperApp();
     const res = await wrapper.fetch(
       makeRequest({ html: "<h1>Hi</h1>", title: "T", description: "D", ttlDays: 1 })

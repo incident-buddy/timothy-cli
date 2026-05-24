@@ -14,17 +14,10 @@ export async function uploadHtml(
   await file.save(html, { contentType: "text/html; charset=utf-8" });
 }
 
-export async function generateSignedUrl(
-  storagePath: string,
-  expiresAt: Date
-): Promise<string> {
+export async function getFileContent(storagePath: string): Promise<string> {
   const bucket = getBucket();
-  const file = bucket.file(storagePath);
-  const [url] = await file.getSignedUrl({
-    action: "read",
-    expires: expiresAt,
-  });
-  return url;
+  const [contents] = await bucket.file(storagePath).download();
+  return contents.toString("utf-8");
 }
 
 export async function deleteFile(storagePath: string): Promise<void> {

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { db } from "../lib/firebase.js";
-import { uploadHtml, generateSignedUrl } from "../lib/storage.js";
+import { uploadHtml } from "../lib/storage.js";
 import { ulid } from "ulid";
 import { addSeconds, now } from "../lib/time.js";
 
@@ -69,7 +69,10 @@ app.post("/", async (c) => {
   const expiresAt = addSeconds(now(), ttlDays * 24 * 60 * 60);
 
   await uploadHtml(storagePath, html);
-  const url = await generateSignedUrl(storagePath, expiresAt);
+
+  const proto = c.req.header("x-forwarded-proto") ?? "http";
+  const host = c.req.header("host") ?? "localhost";
+  const url = `${proto}://${host}/s/${id}`;
 
   await db.collection(HTML_FILES_COLLECTION).doc(id).set({
     userId,
