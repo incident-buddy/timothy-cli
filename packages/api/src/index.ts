@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { accessLogMiddleware } from "./lib/accessLog.js";
 import { authMiddleware } from "./lib/apiKey.js";
 import { ipAllowlistMiddleware } from "./lib/ipAllowlist.js";
 import uploadRoute from "./routes/upload.js";
@@ -8,6 +9,7 @@ import serveRoute from "./routes/serve.js";
 
 const app = new Hono<{ Variables: { userId: string } }>();
 
+app.use("*", accessLogMiddleware);
 app.use("/upload", authMiddleware);
 app.use("/files/*", authMiddleware);
 app.use("/s/*", ipAllowlistMiddleware);

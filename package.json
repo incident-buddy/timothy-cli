@@ -6,6 +6,7 @@
     "build": "pnpm -r run build",
     "dev:api": "pnpm --filter @timothy/api run dev",
     "dev:cli": "pnpm --filter timothy-cli run dev",
+    "test": "pnpm -r run test",
     "lint": "oxlint --config oxlint.json packages"
   },
   "devDependencies": {
