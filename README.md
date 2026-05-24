@@ -1,13 +1,13 @@
 # Timothy
 
-A self-hosted CLI tool to upload LLM-generated HTML and share it via signed URLs. Only people who know the URL can view the file — no login required for viewers.
+A self-hosted CLI tool to upload LLM-generated HTML and share it via time-limited URLs. Only people who know the URL can view the file — no login required for viewers.
 
 [日本語版はこちら](./README.ja.md)
 
 ## Features
 
 - Upload HTML from a file or stdin
-- Share via a time-limited signed URL (default: 7 days)
+- Share via a time-limited URL (default: 7 days)
 - List and delete your uploaded files from the CLI
 - Self-hosted: you control the storage and access
 
@@ -17,7 +17,7 @@ A self-hosted CLI tool to upload LLM-generated HTML and share it via signed URLs
 tim upload report.html  →  https://your-api/s/<id>
 ```
 
-The URL is served through your Cloud Run API with IP allowlist protection. Storage is private — files are never publicly accessible directly.
+The URL is served through your Cloud Run API, which fetches the file from private Cloud Storage and proxies it. Files are never publicly accessible directly; access expires after the specified TTL.
 
 ## Requirements
 
@@ -45,7 +45,7 @@ Save your API key and endpoint:
 ```bash
 tim setup
 # API key: hs_xxxxxxxxxxxx
-# API endpoint: https://your-api.example.com
+# API endpoint [https://api.timothy.example.com]: https://your-api.example.com
 ```
 
 Configuration is stored in `~/.config/timothy/config.json`.
@@ -154,7 +154,7 @@ Share the key and your Cloud Run service URL with users, then they can run `tim 
 | Component | Config |
 |---|---|
 | Cloud Run | min-instances: 0, max-instances: 2 |
-| Cloud Storage | Public access disabled; served via signed URL only |
+| Cloud Storage | Public access disabled; proxied through Cloud Run API |
 | Firestore | Write access via Admin SDK only |
 | Auth | API key (Bearer token), validated against Firestore |
 
