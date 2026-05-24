@@ -140,21 +140,11 @@ firebase deploy --only firestore
 BUCKET=${PROJECT}-timothy
 gsutil mb -l ${REGION} gs://${BUCKET}
 gsutil uniformbucketlevelaccess set on gs://${BUCKET}
-
-# Firebase StorageにバケットをリンクするFirebaserm
-curl -s -X POST \
-  "https://firebasestorage.googleapis.com/v1beta/projects/${PROJECT}/buckets/${BUCKET}:addFirebase" \
-  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-  -H "Content-Type: application/json"
 ```
 
-バケットはデフォルトでプライベート（パブリックアクセスなし）です。APIはAdmin SDKでアクセスするためFirebase Security Rulesをバイパスします。`storage.rules` のデプロイは任意ですが、[Firebaseコンソール](https://console.firebase.google.com) でFirebase Storageを初期化した後に以下で適用できます:
+バケットはデフォルトでプライベートです。APIはAdmin SDKがサービスアカウント認証情報とバケット名を使って直接Cloud Storageにアクセスするため、Firebase Storageへのリンクは不要です。
 
-```bash
-firebase deploy --only storage
-```
-
-次のステップで `FIREBASE_STORAGE_BUCKET` に指定するバケット名は、ここで作成した名前（`${PROJECT}-timothy` など）を使用してください。
+次のステップで `FIREBASE_STORAGE_BUCKET` にはここで作成したバケット名を指定してください。
 
 ### 3. サービスアカウントの作成
 

@@ -140,21 +140,11 @@ Note: The `.appspot.com` bucket name requires domain ownership verification. Use
 BUCKET=${PROJECT}-timothy
 gsutil mb -l ${REGION} gs://${BUCKET}
 gsutil uniformbucketlevelaccess set on gs://${BUCKET}
-
-# Link the bucket to Firebase Storage
-curl -s -X POST \
-  "https://firebasestorage.googleapis.com/v1beta/projects/${PROJECT}/buckets/${BUCKET}:addFirebase" \
-  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-  -H "Content-Type: application/json"
 ```
 
-The bucket is private by default (no public access). The API accesses it via Admin SDK, which bypasses Firebase Security Rules, so deploying `storage.rules` is optional. If you do want to deploy them after setting up Firebase Storage via the [Firebase console](https://console.firebase.google.com), run:
+The bucket is private by default. The API accesses it via Admin SDK using the service account credentials and the bucket name — no Firebase Storage linkage is needed.
 
-```bash
-firebase deploy --only storage
-```
-
-Use the bucket name (`${PROJECT}-timothy` or whatever you chose) as the value for `FIREBASE_STORAGE_BUCKET` in the next step.
+Use this bucket name as the value for `FIREBASE_STORAGE_BUCKET` in the next step.
 
 ### 3. Create a service account
 
