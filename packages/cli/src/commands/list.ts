@@ -17,7 +17,7 @@ export const listCommand = new Command("list")
       return;
     }
 
-    const idW = 12;
+    const idW = 27;
     const titleW = 24;
     const dateW = 12;
     const header = `${"ID".padEnd(idW)}${"TITLE".padEnd(titleW)}${"CREATED".padEnd(dateW)}EXPIRES`;
