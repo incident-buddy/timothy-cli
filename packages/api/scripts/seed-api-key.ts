@@ -12,7 +12,7 @@
 import "../src/lib/firebase.js";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 
-const API_KEY = process.env.API_KEY ?? "hs_localtest";
+const API_KEY = process.env.API_KEY ?? "localtest";
 const USER_ID = process.env.USER_ID ?? "local@example.com";
 
 const db = getFirestore();

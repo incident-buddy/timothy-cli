@@ -1,69 +1,69 @@
 # Timothy
 
-A self-hosted CLI tool to upload LLM-generated HTML and share it via time-limited URLs. Only people who know the URL can view the file — no login required for viewers.
+LLMが生成したHTMLをターミナルからアップロードし、有効期限付きURLで共有するセルフホスト型CLIツールです。URLを知っている人だけが閲覧でき、閲覧者のログインは不要です。
 
-[日本語版はこちら](./README.ja.md)
+[English README](./README.md)
 
-## Features
+## 特徴
 
-- Upload HTML from a file or stdin
-- Share via a time-limited URL (default: 7 days)
-- List and delete your uploaded files from the CLI
-- Self-hosted: you control the storage and access
+- HTMLをファイルまたは標準入力からアップロード
+- 有効期限付きURLで共有（デフォルト: 7日間）
+- アップロード済みファイルの一覧表示・削除をCLIで操作
+- セルフホスト: ストレージとアクセスを自分で管理
 
-## How It Works
+## 仕組み
 
 ```
 tim upload report.html  →  https://your-api/s/<id>
 ```
 
-The URL is served through your Cloud Run API, which fetches the file from private Cloud Storage and proxies it. Files are never publicly accessible directly; access expires after the specified TTL.
+URLはCloud Run上のAPIを経由して配信されます。APIがプライベートなCloud StorageからHTMLを取得してプロキシするため、ファイルに直接アクセスすることはできません。アクセスは指定したTTL経過後に無効になります。
 
-## Requirements
+## 必要なもの
 
-- A deployed instance of `@timothy/api` (see [Self-Hosting](#self-hosting))
-- An API key issued by the server admin
+- デプロイ済みの `@timothy/api`（[セルフホスティング](#セルフホスティング) を参照）
+- サーバー管理者から発行されたAPIキー
 
-## Installation
+## インストール
 
 ```bash
 npm install -g timothy-cli
 ```
 
-Or run without installing:
+インストールせずに実行する場合:
 
 ```bash
 npx timothy-cli <command>
 ```
 
-## Usage
+## 使い方
 
-### Setup
+### セットアップ
 
-Save your API key and endpoint:
+APIキーとエンドポイントを保存します:
 
 ```bash
 tim setup
-# API key: xxxxxxxxxxxxxxxxxxxx
+# API key: hs_xxxxxxxxxxxx
 # API endpoint [https://api.timothy.example.com]: https://your-api.example.com
 ```
 
-Configuration is stored in `~/.config/timothy/config.json`.
+設定は `~/.config/timothy/config.json` に保存されます。
 
-### Upload
+### アップロード
 
 ```bash
-# Upload a file
+# ファイルをアップロード
 tim upload report.html
 
-# Upload with a custom title and TTL
-tim upload report.html --title "Monthly Report" --ttl 30
+# タイトルと有効期限を指定
+tim upload report.html --title "月次レポート" --ttl 30
 
-# Pipe from stdin
-llm generate report | tim upload --stdin --title "Generated Report"
+# 標準入力から渡す
+llm generate report | tim upload --stdin --title "生成レポート"
 ```
 
-### List
+### 一覧表示
 
 ```bash
 tim list
@@ -71,33 +71,33 @@ tim list
 
 ```
 ID                          TITLE             CREATED       EXPIRES
-01JWXYZ...                  Monthly Report    2026-05-20    2026-05-27
-01JWABC...                  Analysis          2026-05-18    2026-05-25
+01JWXYZ...                  月次レポート        2026-05-20    2026-05-27
+01JWABC...                  分析結果            2026-05-18    2026-05-25
 ```
 
-### Delete
+### 削除
 
 ```bash
 tim delete <id>
 # Delete 01JWXYZ...? [y/N] y
 # Deleted 01JWXYZ...
 
-# Skip confirmation
+# 確認プロンプトをスキップ
 tim delete <id> --force
 ```
 
-## Self-Hosting
+## セルフホスティング
 
-Timothy's backend (`@timothy/api`) runs on Cloud Run with Firestore and Cloud Storage.
+Timothyのバックエンド（`@timothy/api`）は、FirestoreとCloud StorageをバックエンドにCloud Run上で動作します。
 
-### Prerequisites
+### 前提条件
 
-- Google Cloud project with billing enabled
-- [`gcloud` CLI](https://cloud.google.com/sdk/docs/install) installed and authenticated
-- [`firebase` CLI](https://firebase.google.com/docs/cli) installed and authenticated (`firebase login`)
-- Docker installed
+- 課金が有効なGoogle Cloudプロジェクト
+- [`gcloud` CLI](https://cloud.google.com/sdk/docs/install) のインストールと認証
+- [`firebase` CLI](https://firebase.google.com/docs/cli) のインストールと認証（`firebase login`）
+- Dockerのインストール
 
-### 1. Enable required GCP APIs
+### 1. 必要なGCP APIの有効化
 
 ```bash
 PROJECT=your-gcp-project-id
@@ -113,26 +113,26 @@ gcloud services enable \
   artifactregistry.googleapis.com
 ```
 
-### 2. Set up Firestore and Storage
+### 2. FirestoreとStorageのセットアップ
 
-Create the Firestore database:
+Firestoreデータベースを作成します:
 
 ```bash
 gcloud firestore databases create --location=${REGION}
 ```
 
-Deploy Firestore rules and indexes from the repository root:
+リポジトリルートからFirestoreルールとインデックスをデプロイします:
 
 ```bash
 firebase use ${PROJECT}
 firebase deploy --only firestore
 ```
 
-This applies:
-- `firestore.rules` — blocks all direct client access
-- `firestore.indexes.json` — composite index on `htmlFiles` (userId + createdAt) used by `tim list`
+これにより以下が適用されます:
+- `firestore.rules` — クライアントからの直接アクセスを禁止
+- `firestore.indexes.json` — `tim list` で使用する `htmlFiles` の複合インデックス（userId + createdAt）
 
-**Create the Cloud Storage bucket:**
+**Cloud Storageバケットの作成:**
 
 ```bash
 BUCKET=${PROJECT}-timothy
@@ -140,9 +140,9 @@ gsutil mb -l ${REGION} gs://${BUCKET}
 gsutil uniformbucketlevelaccess set on gs://${BUCKET}
 ```
 
-Use this bucket name as the value for `FIREBASE_STORAGE_BUCKET` in the next step.
+次のステップの `FIREBASE_STORAGE_BUCKET` にはここで作成したバケット名を指定してください。
 
-### 3. Create a service account
+### 3. サービスアカウントの作成
 
 ```bash
 gcloud iam service-accounts create timothy-api \
@@ -162,7 +162,7 @@ gcloud iam service-accounts keys create serviceAccount.json \
   --iam-account ${SA}
 ```
 
-### 4. Create an Artifact Registry repository
+### 4. Artifact Registryリポジトリの作成
 
 ```bash
 gcloud artifacts repositories create timothy \
@@ -170,7 +170,7 @@ gcloud artifacts repositories create timothy \
   --location ${REGION}
 ```
 
-### 5. Register secrets in Secret Manager
+### 5. Secret Managerへのシークレット登録
 
 ```bash
 echo -n "${PROJECT}" | gcloud secrets create FIREBASE_PROJECT_ID --data-file=-
@@ -180,7 +180,7 @@ printf '%s' "$(cat serviceAccount.json | jq -r .private_key)" \
   | gcloud secrets create FIREBASE_PRIVATE_KEY --data-file=-
 ```
 
-Grant the Cloud Run default service account access to these secrets:
+Cloud Runのデフォルトサービスアカウントにシークレットへのアクセス権を付与します:
 
 ```bash
 PROJECT_NUMBER=$(gcloud projects describe ${PROJECT} --format='value(projectNumber)')
@@ -193,9 +193,9 @@ for SECRET in FIREBASE_PROJECT_ID FIREBASE_CLIENT_EMAIL FIREBASE_STORAGE_BUCKET 
 done
 ```
 
-### 6. Build and deploy the API
+### 6. APIのビルドとデプロイ
 
-Build and push the Docker image from the repository root:
+リポジトリルートからDockerイメージをビルド・プッシュします:
 
 ```bash
 IMAGE=${REGION}-docker.pkg.dev/${PROJECT}/timothy/api:latest
@@ -204,7 +204,7 @@ docker build -f packages/api/Dockerfile -t ${IMAGE} .
 docker push ${IMAGE}
 ```
 
-Deploy to Cloud Run:
+Cloud Runにデプロイします:
 
 ```bash
 gcloud run deploy timothy-api \
@@ -219,38 +219,38 @@ gcloud run deploy timothy-api \
   --allow-unauthenticated
 ```
 
-Note: `--allow-unauthenticated` is required so that share URLs (`/s/<id>`) are accessible to anyone who knows the link. Upload and list/delete endpoints are protected by the API key at the application level.
+注: `--allow-unauthenticated` は共有URL（`/s/<id>`）をリンクを知っている人が誰でも開けるようにするために必要です。アップロード・一覧・削除エンドポイントはアプリケーションレベルのAPIキーで保護されています。
 
-After deploying, note the service URL printed by the command — you'll need it in step 8.
+デプロイ後に表示されるサービスURLをメモしてください（ステップ8で使用します）。
 
-### 7. Issue an API key
+### 7. APIキーの発行
 
-Add an entry to Firestore's `apiKeys` collection using the seed script:
+seedスクリプトを使ってFirestoreの `apiKeys` コレクションにエントリを追加します:
 
 ```bash
 FIREBASE_PROJECT_ID=${PROJECT} \
 FIREBASE_CLIENT_EMAIL=$(cat serviceAccount.json | jq -r .client_email) \
 FIREBASE_PRIVATE_KEY=$(cat serviceAccount.json | jq -r .private_key) \
-API_KEY=$(openssl rand -hex 32) \
+API_KEY=hs_$(openssl rand -hex 16) \
 USER_ID=user@example.com \
 npx tsx packages/api/scripts/seed-api-key.ts
 ```
 
-Note the printed API key — share it along with the Cloud Run service URL with each user.
+表示されたAPIキーをメモし、Cloud RunサービスのURLとともにユーザーに共有してください。
 
-Alternatively, add the entry manually via the Firebase console under Firestore > `apiKeys` collection:
+または、Firebaseコンソールから Firestore > `apiKeys` コレクションに手動で追加することもできます:
 
 ```json
 {
-  "key": "xxxxxxxxxxxxxxxxxxxx",
+  "key": "hs_xxxxxxxxxxxxxxxxxxxx",
   "userId": "user@example.com",
   "createdAt": "<Timestamp>"
 }
 ```
 
-### 8. (Optional) Restrict access by IP
+### 8. （オプション）IPアドレス制限の設定
 
-To limit who can view shared files, set the `ALLOWED_IPS` environment variable on Cloud Run (comma-separated IPs or CIDR ranges):
+共有ファイルの閲覧者をIPアドレスで制限する場合、Cloud Runの `ALLOWED_IPS` 環境変数にカンマ区切りでIPまたはCIDRを設定します:
 
 ```bash
 gcloud run services update timothy-api \
@@ -258,38 +258,38 @@ gcloud run services update timothy-api \
   --set-env-vars ALLOWED_IPS="203.0.113.0/24,198.51.100.42"
 ```
 
-If `ALLOWED_IPS` is not set, share URLs are accessible from any IP.
+`ALLOWED_IPS` を設定しない場合、共有URLは任意のIPからアクセス可能です。
 
-### 9. Configure the CLI
+### 9. CLIの設定
 
-Users can now configure the CLI with their API key and the Cloud Run service URL:
+ユーザーはAPIキーとCloud RunサービスのURLを使ってCLIを設定します:
 
 ```bash
 tim setup
-# API key: xxxxxxxxxxxxxxxxxxxx
+# API key: hs_xxxxxxxxxxxxxxxxxxxx
 # API endpoint [https://api.timothy.example.com]: https://timothy-api-xxxx-an.a.run.app
 ```
 
-### Infrastructure Overview
+### インフラ構成
 
-| Component | Config |
+| コンポーネント | 設定 |
 |---|---|
-| Cloud Run | min-instances: 0, max-instances: 2, allow-unauthenticated |
-| Cloud Storage | Public access disabled; proxied through Cloud Run API |
-| Firestore | Write access via Admin SDK only; rules and indexes managed via Firebase CLI |
-| Auth | API key (Bearer token) for upload/list/delete; optional IP allowlist for share URLs |
+| Cloud Run | 最小インスタンス: 0、最大インスタンス: 2、認証なし（allow-unauthenticated） |
+| Cloud Storage | パブリックアクセス禁止・Cloud Run APIを経由してプロキシ配信 |
+| Firestore | Admin SDK経由のみ書き込み可・Firebase CLIでルール・インデックスを管理 |
+| 認証 | アップロード・一覧・削除はAPIキー（Bearerトークン）、共有URLはオプションのIPアドレス制限 |
 
-## Self-Hosting on AWS (Lambda)
+## AWSでのセルフホスティング（Lambda）
 
-The API also runs on AWS Lambda using the same Firebase backend (Firestore + Cloud Storage). Only the compute layer changes — no code differences from the Cloud Run setup.
+APIはAWS Lambda上でも動作します。Firebaseバックエンド（Firestore + Cloud Storage）はそのまま使用し、コンピュート層のみをAWSに置き換えます。Cloud Run版との**コードの差異はありません**。
 
-### Prerequisites
+### 前提条件
 
-- AWS account with the AWS CLI installed and configured (`aws configure`)
-- Docker installed
-- Firebase project already set up (follow steps 1–3 of the [Cloud Run guide](#self-hosting) to create the Firestore database, deploy rules/indexes, and create a service account)
+- AWSアカウントとAWS CLIのインストール・設定（`aws configure`）
+- Dockerのインストール
+- Firebaseプロジェクトのセットアップ済み（[Cloud Runガイド](#セルフホスティング) のステップ1〜3でFirestoreデータベース作成・ルール/インデックスのデプロイ・サービスアカウント作成を完了してください）
 
-### 1. Create an ECR repository
+### 1. ECRリポジトリの作成
 
 ```bash
 AWS_REGION=ap-northeast-1
@@ -298,7 +298,7 @@ AWS_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
 aws ecr create-repository --repository-name timothy-api --region ${AWS_REGION}
 ```
 
-### 2. Build and push the Lambda image
+### 2. LambdaイメージのビルドとECRへのプッシュ
 
 ```bash
 IMAGE=${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/timothy-api:latest
@@ -310,7 +310,7 @@ docker build -f packages/api/Dockerfile.lambda -t ${IMAGE} .
 docker push ${IMAGE}
 ```
 
-### 3. Register secrets in AWS Secrets Manager
+### 3. AWS Secrets Managerへのシークレット登録
 
 ```bash
 aws secretsmanager create-secret --name FIREBASE_PROJECT_ID \
@@ -323,7 +323,7 @@ aws secretsmanager create-secret --name FIREBASE_PRIVATE_KEY \
   --secret-string "$(cat serviceAccount.json | jq -r .private_key)"
 ```
 
-### 4. Create an IAM role for Lambda
+### 4. Lambda用IAMロールの作成
 
 ```bash
 aws iam create-role --role-name timothy-lambda \
@@ -351,7 +351,7 @@ aws iam put-role-policy --role-name timothy-lambda \
   }'
 ```
 
-### 5. Create the Lambda function
+### 5. Lambda関数の作成
 
 ```bash
 ROLE_ARN=$(aws iam get-role --role-name timothy-lambda --query Role.Arn --output text)
@@ -370,7 +370,7 @@ aws lambda create-function \
   }"
 ```
 
-### 6. Create a Lambda Function URL
+### 6. Lambda Function URLの作成
 
 ```bash
 aws lambda add-permission \
@@ -387,24 +387,24 @@ aws lambda create-function-url-config \
   --region ${AWS_REGION}
 ```
 
-Note the `FunctionUrl` in the output — this is your API endpoint.
+出力の `FunctionUrl` をメモしてください。これがAPIエンドポイントになります。
 
-### 7. Issue an API key
+### 7. APIキーの発行
 
-Same as the Cloud Run setup — use the seed script with the Firebase service account credentials:
+Cloud Run版と同じ手順です。FirebaseサービスアカウントのJSONを使ってseedスクリプトを実行します:
 
 ```bash
 FIREBASE_PROJECT_ID=your-project-id \
 FIREBASE_CLIENT_EMAIL=$(cat serviceAccount.json | jq -r .client_email) \
 FIREBASE_PRIVATE_KEY=$(cat serviceAccount.json | jq -r .private_key) \
-API_KEY=$(openssl rand -hex 32) \
+API_KEY=hs_$(openssl rand -hex 16) \
 USER_ID=user@example.com \
 npx tsx packages/api/scripts/seed-api-key.ts
 ```
 
-### 8. (Optional) Restrict access by IP
+### 8. （オプション）IPアドレス制限の設定
 
-Set the `ALLOWED_IPS` environment variable on the Lambda function:
+`ALLOWED_IPS` 環境変数でLambda関数を更新します:
 
 ```bash
 aws lambda update-function-configuration \
@@ -413,23 +413,23 @@ aws lambda update-function-configuration \
   --region ${AWS_REGION}
 ```
 
-### 9. Configure the CLI
+### 9. CLIの設定
 
 ```bash
 tim setup
-# API key: xxxxxxxxxxxxxxxxxxxx
+# API key: hs_xxxxxxxxxxxxxxxxxxxx
 # API endpoint [https://api.timothy.example.com]: https://xxxxxxxxxxxx.lambda-url.ap-northeast-1.on.aws
 ```
 
-### Infrastructure Overview
+### インフラ構成
 
-| Component | Config |
+| コンポーネント | 設定 |
 |---|---|
-| Lambda | Container image (`Dockerfile.lambda`), Function URL (no auth) |
-| Cloud Storage | Firebase Cloud Storage; proxied through Lambda |
-| Firestore | Firebase Firestore; shared with Cloud Run setup |
-| Auth | API key (Bearer token) for upload/list/delete; optional IP allowlist for share URLs |
+| Lambda | コンテナイメージ（`Dockerfile.lambda`）、Function URL（認証なし） |
+| Cloud Storage | Firebase Cloud Storage・Lambdaを経由してプロキシ配信 |
+| Firestore | Firebase Firestore・Cloud Run版と共用可 |
+| 認証 | アップロード・一覧・削除はAPIキー（Bearerトークン）、共有URLはオプションのIPアドレス制限 |
 
-## License
+## ライセンス
 
 EPL-2.0
