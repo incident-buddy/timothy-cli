@@ -1,3 +1,5 @@
+<img width="1502" height="940" alt="image" src="https://github.com/user-attachments/assets/84aacaa9-aed6-4088-bfeb-e888cdf033e3" />
+
 # Timothy
 
 A self-hosted CLI tool to upload LLM-generated HTML and share it via time-limited URLs. Only people who know the URL can view the file — no login required for viewers.
